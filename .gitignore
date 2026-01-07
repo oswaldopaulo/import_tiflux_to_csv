@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+
+# Data Files (CSV) containing sensitive info
+clientes.csv
+contatos.csv
+enderecos.csv
+solicitantes.csv
+modelosndesk.csv
+
+# Logs
+*.log

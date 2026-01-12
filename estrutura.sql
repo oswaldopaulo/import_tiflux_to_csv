@@ -1,0 +1,52 @@
+CREATE TABLE `clientes`
+(
+    `id`             int(11) NOT NULL AUTO_INCREMENT,
+    `email`          varchar(255)       DEFAULT NULL,
+    `fone`           varchar(50)        DEFAULT NULL,
+    `celular`        varchar(50)        DEFAULT NULL,
+    `nome`           varchar(100)       DEFAULT NULL,
+    `cpf_cnpj`       varchar(20)        DEFAULT NULL,
+    `ativo`          varchar(1)         DEFAULT 'N',
+    `bloqueado`      varchar(1)         DEFAULT 'N',
+    `imagem`         varchar(255)       DEFAULT NULL,
+    `endereco`       varchar(100)       DEFAULT NULL,
+    `numero`         varchar(10)        DEFAULT NULL,
+    `complemento`    varchar(100)       DEFAULT NULL,
+    `bairro`         varchar(100)       DEFAULT NULL,
+    `cep`            varchar(20)        DEFAULT NULL,
+    `cidade`         varchar(50)        DEFAULT NULL,
+    `uf`             varchar(2)         DEFAULT NULL,
+    `password`       varchar(255)       DEFAULT NULL,
+    `session_id`     varchar(255)       DEFAULT NULL,
+    `remember_token` varchar(100)       DEFAULT NULL,
+    `updated_at`     timestamp NULL DEFAULT NULL,
+    `created_at`     timestamp NOT NULL DEFAULT current_timestamp(),
+    `idsla`          int(11) DEFAULT NULL,
+    `idtecnico`      int(11) DEFAULT NULL,
+    `deleted_at`     timestamp NULL DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    KEY              `clientes_idtecnico_index` (`idtecnico`),
+    KEY              `idx_clientes_nome` (`nome`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+CREATE TABLE `cliente_emails`
+(
+    `id`                int(11) NOT NULL AUTO_INCREMENT,
+    `idcliente`         bigint(20) DEFAULT NULL,
+    `email`             varchar(255)       DEFAULT NULL,
+    `nome`              varchar(50)        DEFAULT NULL,
+    `admin`             varchar(1)         DEFAULT 'N' COMMENT 'Se o usuário é admin S/N',
+    `password`          varchar(255)       DEFAULT NULL,
+    `session_id`        varchar(255)       DEFAULT NULL,
+    `remember_token`    varchar(100)       DEFAULT NULL,
+    `updated_at`        timestamp NULL DEFAULT NULL,
+    `created_at`        timestamp NOT NULL DEFAULT current_timestamp(),
+    `ramal`             varchar(10)        DEFAULT NULL,
+    `telefone`          varchar(20)        DEFAULT NULL,
+    `idsla`             int(11) DEFAULT NULL,
+    `idbling`           int(11) DEFAULT NULL,
+    `email_verified_at` timestamp NULL DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    KEY                 `cliente_emails_idbling` (`idbling`),
+    KEY                 `idcliente_idx` (`idcliente`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci

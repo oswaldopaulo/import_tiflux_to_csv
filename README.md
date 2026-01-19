@@ -1,21 +1,27 @@
 # SndeskTiflux Importer
 
-Este projeto consiste em um conjunto de scripts Python para extrair dados da API do Tiflux e consolidá-los em um formato CSV específico (modelo Sndesk).
+Este projeto consiste em um conjunto de scripts Python para extrair dados da API do Tiflux, consolidá-los em CSV e gerar scripts SQL para migração de dados para o sistema Sndesk.
 
 ## Funcionalidades
 
-1.  **Importação de Dados (`import_tiflux.py`)**:
-    *   Conecta-se à API v2 do Tiflux.
-    *   Baixa dados de Clientes, Contatos, Endereços e Solicitantes.
-    *   Salva os dados brutos em arquivos CSV separados (`clientes.csv`, `contatos.csv`, `enderecos.csv`, `solicitantes.csv`).
-    *   Respeita o rate limit da API.
-    *   Solicita o Bearer Token na execução.
+### 1. Importação de Clientes e Contatos
+*   **Script**: `import_tiflux.py`
+*   **Descrição**: Conecta-se à API v2 do Tiflux e baixa dados de Clientes, Contatos, Endereços e Solicitantes.
+*   **Saída**: `clientes.csv`, `contatos.csv`, `enderecos.csv`, `solicitantes.csv`.
 
-2.  **Mesclagem de Dados (`merge_csv.py`)**:
-    *   Lê os arquivos CSV gerados anteriormente.
-    *   Consolida as informações em um único arquivo `modelosndesk.csv`.
-    *   Remove duplicatas baseadas no CPF/CNPJ.
-    *   Mapeia os campos para o layout esperado.
+### 2. Importação de Catálogos e Departamentos
+*   **Script**: `import_catalogo.py`
+*   **Descrição**: Baixa dados de Mesas (Departamentos), Catálogos (Produtos) e Itens de Catálogo (Tipos).
+*   **Saída**: `mesas.csv`, `catalogos.csv`, `itensdocatalogo.csv`.
+
+### 3. Processamento de Dados
+*   **Script**: `merge_csv.py`
+    *   Consolida informações de clientes em `modelosndesk.csv`.
+    *   Remove duplicatas por CPF/CNPJ.
+*   **Script**: `generate_sql.py`
+    *   Gera `insert_dados.sql` para popular as tabelas `clientes` e `cliente_emails`.
+*   **Script**: `generate_sql_departamentos.py`
+    *   Gera `insert_dados_departamentos.sql` para popular as tabelas `departamentos`, `produtos`, `tipos` e seus relacionamentos (`produto_departamentos`).
 
 ## Pré-requisitos
 
@@ -40,25 +46,34 @@ Este projeto consiste em um conjunto de scripts Python para extrair dados da API
 
 ## Como Usar
 
-### Passo 1: Importar Dados do Tiflux
+### Passo 1: Extrair Dados da API
 
-Execute o script de importação:
+Execute os scripts de importação. Você precisará de um **Bearer Token** válido do Tiflux.
 
 ```bash
+# Importar Clientes
 python import_tiflux.py
+
+# Importar Catálogos/Departamentos
+python import_catalogo.py
 ```
 
-O script solicitará o seu **Bearer Token** do Tiflux. Cole-o e pressione Enter. O processo pode demorar dependendo da quantidade de clientes, pois o script respeita o limite de requisições da API.
+### Passo 2: Gerar Arquivos de Migração
 
-### Passo 2: Gerar CSV Consolidado
-
-Após a conclusão da importação, execute o script de merge:
+Após baixar os dados, gere os arquivos finais:
 
 ```bash
+# Gerar CSV consolidado de clientes
 python merge_csv.py
+
+# Gerar SQL de Clientes
+python generate_sql.py
+
+# Gerar SQL de Departamentos e Produtos
+python generate_sql_departamentos.py
 ```
 
-Isso gerará o arquivo `modelosndesk.csv` na raiz do projeto, pronto para uso.
+Os arquivos gerados (`.csv` e `.sql`) estarão na raiz do projeto.
 
 ## Créditos
 

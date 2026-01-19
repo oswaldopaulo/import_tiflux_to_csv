@@ -17,8 +17,14 @@ clientes.csv
 contatos.csv
 enderecos.csv
 solicitantes.csv
+mesas.csv
+catalogos.csv
+itensdocatalogo.csv
 modelosndesk.csv
+
+# Generated SQL Files
 insert_dados.sql
+insert_dados_departamentos.sql
 
 # Logs
 *.log

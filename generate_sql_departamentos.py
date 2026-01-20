@@ -1,190 +1,220 @@
-import pandas as pd
+import csv
+import re
 import os
 import ast
-import json
 
-def escape_sql_string(val):
-    if pd.isna(val):
-        return "NULL"
-    # Escape single quotes
-    return "'" + str(val).replace("'", "''") + "'"
+def escape_sql(value):
+    if value is None:
+        return 'NULL'
+    return "'" + str(value).replace("'", "''").replace('\\', '\\\\') + "'"
 
-def get_col_value(row, col_names, default=None):
-    """Try to get value from multiple potential column names."""
-    for col in col_names:
-        if col in row:
-            return row[col]
-    return default
-
-def map_ativo(val):
-    """Map boolean/integer active status to 'S'/'N'."""
-    if pd.isna(val):
-        return "'S'" # Default to Active if unknown
-    
-    s_val = str(val).lower()
-    if s_val in ['1', 'true', 's', 'sim', 'yes']:
-        return "'S'"
-    return "'N'"
-
-def truncate_string(val, length):
-    if val is None:
-        return ""
-    s_val = str(val)
-    if len(s_val) > length:
-        return s_val[:length]
-    return s_val
-
-def parse_area_name(area_val):
-    """Parses the area column which might be a string representation of a dict."""
-    if pd.isna(area_val) or str(area_val).strip() == '':
+def truncate(value, length):
+    if not value:
         return ''
-    
-    s_area = str(area_val).strip()
-    
-    # If it doesn't look like a dict, return as is
-    if not s_area.startswith('{'):
-        return s_area
+    return str(value)[:length]
 
-    # Try parsing as Python literal (most likely for CSV written by Python)
+def parse_dict_str(s):
+    """Parses a string representation of a dictionary like "{'id': 1, 'name': 'foo'}"."""
     try:
-        data = ast.literal_eval(s_area)
-        if isinstance(data, dict):
-            return str(data.get('name', ''))
+        return ast.literal_eval(s)
     except:
-        pass
+        return {}
 
-    # Try parsing as JSON (if double quotes were used)
-    try:
-        data = json.loads(s_area)
-        if isinstance(data, dict):
-            return str(data.get('name', ''))
-    except:
-        pass
-        
-    return ''
-
-def generate_sql():
-    # Load CSV files
-    try:
-        # Using dtype=str to preserve IDs and prevent float conversion of nullable ints
-        # Trying 'mesas.csv' first as it is the output of import_catalogo.py
-        mesas_df = pd.read_csv('mesas.csv', dtype=str)
-        catalogos_df = pd.read_csv('catalogos.csv', dtype=str)
-        itens_df = pd.read_csv('itensdocatalogo.csv', dtype=str)
-    except FileNotFoundError:
-        # Fallback for mesa.csv vs mesas.csv
-        try:
-            mesas_df = pd.read_csv('mesa.csv', dtype=str)
-            catalogos_df = pd.read_csv('catalogos.csv', dtype=str)
-            itens_df = pd.read_csv('itensdocatalogo.csv', dtype=str)
-        except FileNotFoundError as e:
-            print(f"Error loading CSV files: {e}")
+def main():
+    # Check files
+    required_files = ['mesas.csv', 'catalogos.csv', 'itensdocatalogo.csv']
+    for f in required_files:
+        if not os.path.exists(f):
+            print(f"Error: {f} not found.")
             return
 
-    sql_statements = []
-    
-    # ---------------------------------------------------------
-    # 1. Tabela departamentos
-    # ---------------------------------------------------------
-    # Structure: id, descricao, icone, ativo, idtipo, portal_cliente, id_termo_personalizado, valor_departamento
-    print("Generating SQL for departamentos...")
-    for _, row in mesas_df.iterrows():
-        id_val = row.get('id')
-        if pd.isna(id_val): continue
-        
-        # Descricao
-        desc_raw = get_col_value(row, ['descricao', 'name', 'description'], '')
-        desc_trunc = truncate_string(desc_raw, 100)
-        descricao = escape_sql_string(desc_trunc)
-        
-        # Ativo
-        ativo_raw = get_col_value(row, ['ativo', 'active', 'enabled'], '1')
-        ativo = map_ativo(ativo_raw)
-        
-        sql = f"INSERT INTO departamentos (id, descricao, icone, ativo, idtipo, portal_cliente, id_termo_personalizado, valor_departamento) VALUES ({id_val}, {descricao}, NULL, {ativo}, 1, 1, NULL, NULL);"
-        sql_statements.append(sql)
-
-    # ---------------------------------------------------------
-    # 2. Tabela produtos
-    # ---------------------------------------------------------
-    # Structure: id, descricao, icone, ativo, idsla, portal_cliente, id_termo_personalizado, valor_categoria
-    print("Generating SQL for produtos...")
-    for _, row in catalogos_df.iterrows():
-        id_val = row.get('id')
-        if pd.isna(id_val): continue
-
-        # Descricao
-        desc_raw = get_col_value(row, ['descricao', 'name', 'description'], '')
-        desc_trunc = truncate_string(desc_raw, 100)
-        descricao = escape_sql_string(desc_trunc)
-        
-        sql = f"INSERT INTO produtos (id, descricao, icone, ativo, idsla, portal_cliente, id_termo_personalizado, valor_categoria) VALUES ({id_val}, {descricao}, '', 'S', NULL, 1, NULL, NULL);"
-        sql_statements.append(sql)
-
-    # ---------------------------------------------------------
-    # 3. Tabela tipos
-    # ---------------------------------------------------------
-    # Structure: id, descricao, ativo, icone, idproduto, portal_cliente, id_termo_personalizado, valor_tipo
-    print("Generating SQL for tipos...")
-    for _, row in itens_df.iterrows():
-        id_val = row.get('id')
-        if pd.isna(id_val): continue
-
-        # Descricao: name + " - " + area.name
-        name = get_col_value(row, ['name', 'descricao'], '')
-        area_raw = get_col_value(row, ['area'], '')
-        area_name = parse_area_name(area_raw)
-        
-        if area_name:
-            desc_combined = f"{name} - {area_name}".strip()
-        else:
-            desc_combined = name.strip()
-            
-        desc_trunc = truncate_string(desc_combined, 100)
-        descricao = escape_sql_string(desc_trunc)
-        
-        # idproduto -> id_catalogo
-        idproduto = row.get('id_catalogo')
-        if pd.isna(idproduto): idproduto = "NULL"
-        
-        sql = f"INSERT INTO tipos (id, descricao, ativo, icone, idproduto, portal_cliente, id_termo_personalizado, valor_tipo) VALUES ({id_val}, {descricao}, 'S', '', {idproduto}, 1, NULL, NULL);"
-        sql_statements.append(sql)
-
-    # ---------------------------------------------------------
-    # 4. Tabela produto_departamentos
-    # ---------------------------------------------------------
-    # Structure: id (auto), idproduto, iddepartamento
-    # Link: catalogos.csv (id=idproduto, id_mesa=iddepartamento)
-    print("Generating SQL for produto_departamentos...")
-    for _, row in catalogos_df.iterrows():
-        idproduto = row.get('id')
-        iddepartamento = row.get('id_mesa')
-        
-        if pd.notna(idproduto) and pd.notna(iddepartamento):
-            sql = f"INSERT INTO produto_departamentos (idproduto, iddepartamento) VALUES ({idproduto}, {iddepartamento});"
-            sql_statements.append(sql)
-
-    # ---------------------------------------------------------
-    # 5. Tabela tipo_produtos
-    # ---------------------------------------------------------
-    # Structure: id (auto), idtipo, idproduto
-    # Link: itensdocatalogo.csv (id=idtipo, id_catalogo=idproduto)
-    print("Generating SQL for tipo_produtos...")
-    for _, row in itens_df.iterrows():
-        idtipo = row.get('id')
-        idproduto = row.get('id_catalogo')
-        
-        if pd.notna(idtipo) and pd.notna(idproduto):
-            sql = f"INSERT INTO tipo_produtos (idtipo, idproduto) VALUES ({idtipo}, {idproduto});"
-            sql_statements.append(sql)
-
-    # Write to file
     output_file = 'insert_dados_departamentos.sql'
-    with open(output_file, 'w', encoding='utf-8') as f:
-        for statement in sql_statements:
-            f.write(statement + '\n')
+    print(f"Generating {output_file}...")
+
+    # Data Structures
+    # catalog_areas: catalog_id -> set of area_names
+    catalog_areas = {}
+    
+    # item_catalog_map: item_id -> catalog_id
+    item_catalog_map = {}
+    
+    # item_area_map: item_id -> area_name
+    item_area_map = {}
+
+    print("Pre-processing Items...")
+    with open('itensdocatalogo.csv', 'r', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            item_id = row['id']
+            cat_id = row['id_catalogo']
             
-    print(f"SQL generation complete. Output in {output_file}")
+            area_str = row['area']
+            area_dict = parse_dict_str(area_str)
+            area_name = area_dict.get('name', '')
+            
+            if cat_id not in catalog_areas:
+                catalog_areas[cat_id] = set()
+            if area_name:
+                catalog_areas[cat_id].add(area_name)
+            
+            item_catalog_map[item_id] = cat_id
+            item_area_map[item_id] = area_name
+
+    # We need to generate NEW product IDs because one catalog can split into multiple products (one per area)
+    # Map: (catalog_id, area_name) -> new_product_id
+    product_mapping = {}
+    next_product_id = 1 
+
+    with open(output_file, 'w', encoding='utf-8') as f:
+        f.write("-- SQL Insert Script for Departments, Products, Types and Relations\n")
+        f.write("BEGIN;\n\n")
+
+        # 1. Departamentos (from mesas.csv)
+        print("Processing Departamentos...")
+        with open('mesas.csv', 'r', encoding='utf-8') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                d_id = row['id']
+                descricao = truncate(row['name'], 100)
+                ativo_val = row['active']
+                ativo = 'S' if ativo_val.lower() == 'true' else 'N'
+                
+                sql = f"INSERT INTO departamentos (id, descricao, ativo, idtipo, portal_cliente) VALUES ({d_id}, {escape_sql(descricao)}, '{ativo}', 1, 1);\n"
+                f.write(sql)
+        
+        f.write("\n")
+
+        # 2. Produtos (from catalogos.csv + areas)
+        print("Processing Produtos...")
+        with open('catalogos.csv', 'r', encoding='utf-8') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                cat_id = row['id']
+                cat_name = row['name']
+                
+                areas = catalog_areas.get(cat_id, set())
+                
+                # If no areas found, create one product with just catalog name (or maybe skip? assuming create)
+                if not areas:
+                    areas.add('') 
+                
+                # Sort areas to be deterministic
+                sorted_areas = sorted(list(areas))
+                
+                for area_name in sorted_areas:
+                    if area_name:
+                        full_desc = f"{cat_name} | {area_name}"
+                    else:
+                        full_desc = cat_name
+                    
+                    full_desc = truncate(full_desc, 100)
+                    
+                    # Assign new ID
+                    p_id = next_product_id
+                    next_product_id += 1
+                    
+                    # Store mapping for later use
+                    product_mapping[(cat_id, area_name)] = p_id
+                    
+                    sql = f"INSERT INTO produtos (id, descricao, icone, ativo, portal_cliente) VALUES ({p_id}, {escape_sql(full_desc)}, '', 'S', 1);\n"
+                    f.write(sql)
+
+        f.write("\n")
+
+        # 3. Tipos (from itensdocatalogo.csv)
+        # idproduto = mapped new_product_id based on (catalog_id, area_name)
+        print("Processing Tipos...")
+        with open('itensdocatalogo.csv', 'r', encoding='utf-8') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                t_id = row['id']
+                name = truncate(row['name'], 100)
+                
+                cat_id = row['id_catalogo']
+                area_name = item_area_map.get(t_id, '')
+                
+                # Find the new product ID
+                new_prod_id = product_mapping.get((cat_id, area_name))
+                
+                # Fallback if not found (shouldn't happen if logic is consistent)
+                if new_prod_id is None:
+                    # Try finding a product for this catalog with empty area
+                    new_prod_id = product_mapping.get((cat_id, ''))
+                
+                if new_prod_id is None:
+                     # Last resort, pick first product for this catalog
+                     for k, v in product_mapping.items():
+                         if k[0] == cat_id:
+                             new_prod_id = v
+                             break
+                
+                if new_prod_id is None:
+                    print(f"Warning: Could not find product for item {t_id} (cat {cat_id})")
+                    continue
+
+                sql = f"INSERT INTO tipos (id, descricao, ativo, icone, idproduto, portal_cliente) VALUES ({t_id}, {escape_sql(name)}, 'S', '', {new_prod_id}, 1);\n"
+                f.write(sql)
+
+        f.write("\n")
+
+        # 4. Produto_Departamentos
+        # Link NEW product IDs to Departments (Mesas)
+        # We need to know which Mesa the original Catalog belonged to.
+        print("Processing Produto_Departamentos...")
+        
+        # Build map: catalog_id -> mesa_id
+        catalog_mesa_map = {}
+        with open('catalogos.csv', 'r', encoding='utf-8') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                catalog_mesa_map[row['id']] = row['id_mesa']
+        
+        # Iterate over all created products
+        for (cat_id, area_name), new_prod_id in product_mapping.items():
+            mesa_id = catalog_mesa_map.get(cat_id)
+            if mesa_id:
+                sql = f"INSERT INTO produto_departamentos (id, idproduto, iddepartamento) VALUES (NULL, {new_prod_id}, {mesa_id});\n"
+                f.write(sql)
+
+        f.write("\n")
+        
+        # 5. Tipo_Produtos
+        # idtipo = item_id, idproduto = new_product_id
+        # Note: The prompt asked for "tipo_produtos" with "idtipo" and "idproduto".
+        # We already linked types to products in the 'tipos' table via 'idproduto' column.
+        # But if there is a separate many-to-many table 'tipo_produtos', we populate it too.
+        # Structure provided in previous turn had 'tipo_departamentos', but user asked for 'tipo_produtos' now.
+        # I will check if 'tipo_produtos' exists in structure.sql provided in context?
+        # The user provided structure.sql content in previous turn, let's check it.
+        # It has `tipo_departamentos` commented out and `tipo_produtos` added at the end?
+        # Wait, I need to be sure. I will assume `tipo_produtos` exists as requested.
+        
+        print("Processing Tipo_Produtos...")
+        with open('itensdocatalogo.csv', 'r', encoding='utf-8') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                t_id = row['id']
+                cat_id = row['id_catalogo']
+                area_name = item_area_map.get(t_id, '')
+                
+                new_prod_id = product_mapping.get((cat_id, area_name))
+                
+                # Fallback logic same as above
+                if new_prod_id is None:
+                    new_prod_id = product_mapping.get((cat_id, ''))
+                if new_prod_id is None:
+                     for k, v in product_mapping.items():
+                         if k[0] == cat_id:
+                             new_prod_id = v
+                             break
+                
+                if new_prod_id:
+                    sql = f"INSERT INTO tipo_produtos (id, idtipo, idproduto) VALUES (NULL, {t_id}, {new_prod_id});\n"
+                    f.write(sql)
+
+        f.write("\nCOMMIT;\n")
+    
+    print("Done.")
 
 if __name__ == "__main__":
-    generate_sql()
+    main()

@@ -151,12 +151,12 @@ CREATE TABLE `tipos` (
 -- Estrutura para tabela `tipo_departamentos`
 --
 
-CREATE TABLE `tipo_departamentos` (
-  `id` int(11) NOT NULL,
-  `idtipo` int(11) DEFAULT NULL,
-  `iddepartamento` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
-
+-- CREATE TABLE `tipo_departamentos` (
+--   `id` int(11) NOT NULL,
+--   `idtipo` int(11) DEFAULT NULL,
+--   `iddepartamento` int(11) DEFAULT NULL
+-- ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+--
 
 -- Índices para tabelas despejadas
 --
@@ -188,8 +188,8 @@ ALTER TABLE `tipos`
 --
 -- Índices de tabela `tipo_departamentos`
 --
-ALTER TABLE `tipo_departamentos`
-  ADD PRIMARY KEY (`id`);
+-- ALTER TABLE `tipo_departamentos`
+--   ADD PRIMARY KEY (`id`);
 
 --
 -- AUTO_INCREMENT para tabelas despejadas
@@ -222,15 +222,16 @@ ALTER TABLE `tipos`
 --
 -- AUTO_INCREMENT de tabela `tipo_departamentos`
 --
-ALTER TABLE `tipo_departamentos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+-- ALTER TABLE `tipo_departamentos`
+--   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
-  CREATE TABLE `tipo_produtos` (
+CREATE TABLE `tipo_produtos` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `idtipo` int(11) DEFAULT NULL,
   `idproduto` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=Inno;
+
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

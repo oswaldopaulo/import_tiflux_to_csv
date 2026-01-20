@@ -224,6 +224,13 @@ ALTER TABLE `tipos`
 --
 ALTER TABLE `tipo_departamentos`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+  CREATE TABLE `tipo_produtos` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `idtipo` int(11) DEFAULT NULL,
+  `idproduto` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=Inno;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

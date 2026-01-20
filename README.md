@@ -21,12 +21,13 @@ Este projeto consiste em um conjunto de scripts Python para extrair dados da API
 *   **Script**: `generate_sql.py`
     *   Gera `insert_dados.sql` para popular as tabelas `clientes` e `cliente_emails`.
 *   **Script**: `generate_sql_departamentos.py`
-    *   Gera `insert_dados_departamentos.sql` para popular as tabelas `departamentos`, `produtos`, `tipos` e seus relacionamentos (`produto_departamentos`).
+    *   Gera `insert_dados_departamentos.sql` para popular as tabelas `departamentos`, `produtos`, `tipos` e seus relacionamentos (`produto_departamentos`, `tipo_produtos`).
 
 ## Pré-requisitos
 
 *   Python 3.x instalado.
 *   Biblioteca `requests`.
+*   Biblioteca `pandas`.
 
 ## Instalação
 
@@ -41,7 +42,7 @@ Este projeto consiste em um conjunto de scripts Python para extrair dados da API
     ```
 3.  Instale as dependências:
     ```bash
-    pip install requests
+    pip install requests pandas
     ```
 
 ## Como Usar

@@ -18,9 +18,11 @@ contatos.csv
 enderecos.csv
 solicitantes.csv
 mesas.csv
-mesa.csv
 catalogos.csv
 itensdocatalogo.csv
+tickets.csv
+ticket_files.csv
+respostas.csv
 modelosndesk.csv
 
 # Generated SQL Files

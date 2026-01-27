@@ -14,7 +14,12 @@ Este projeto consiste em um conjunto de scripts Python para extrair dados da API
 *   **Descrição**: Baixa dados de Mesas (Departamentos), Catálogos (Produtos) e Itens de Catálogo (Tipos).
 *   **Saída**: `mesas.csv`, `catalogos.csv`, `itensdocatalogo.csv`.
 
-### 3. Processamento de Dados
+### 3. Importação de Tickets
+*   **Script**: `import_tickets.py`
+*   **Descrição**: Baixa dados de Tickets, Arquivos anexos e Respostas.
+*   **Saída**: `tickets.csv`, `ticket_files.csv`, `respostas.csv`.
+
+### 4. Processamento de Dados
 *   **Script**: `merge_csv.py`
     *   Consolida informações de clientes em `modelosndesk.csv`.
     *   Remove duplicatas por CPF/CNPJ.
@@ -27,7 +32,6 @@ Este projeto consiste em um conjunto de scripts Python para extrair dados da API
 
 *   Python 3.x instalado.
 *   Biblioteca `requests`.
-*   Biblioteca `pandas`.
 
 ## Instalação
 
@@ -42,7 +46,7 @@ Este projeto consiste em um conjunto de scripts Python para extrair dados da API
     ```
 3.  Instale as dependências:
     ```bash
-    pip install requests pandas
+    pip install requests
     ```
 
 ## Como Usar
@@ -57,6 +61,9 @@ python import_tiflux.py
 
 # Importar Catálogos/Departamentos
 python import_catalogo.py
+
+# Importar Tickets
+python import_tickets.py
 ```
 
 ### Passo 2: Gerar Arquivos de Migração

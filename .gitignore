@@ -18,12 +18,19 @@ contatos.csv
 enderecos.csv
 solicitantes.csv
 mesas.csv
+mesa.csv
 catalogos.csv
 itensdocatalogo.csv
-tickets.csv
-ticket_files.csv
-respostas.csv
 modelosndesk.csv
+
+# Ticket related CSVs (numbered and merged)
+ticket_*.csv
+ticket_files_*.csv
+respostas_*.csv
+
+# Excel files containing sensitive info
+*.xlsx
+*.xls
 
 # Generated SQL Files
 insert_dados.sql
